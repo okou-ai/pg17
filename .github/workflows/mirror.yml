@@ -46,8 +46,11 @@ jobs:
         run: |
           set -euo pipefail
           tag="${{ inputs.source_tag || 'pg17' }}"
-          digest=$(docker buildx imagetools inspect "${SOURCE_IMAGE}:${tag}" --format '{{ .Name }}' | sed 's/.*@//')
-          [ -n "$digest" ] || { echo "failed to resolve upstream digest" >&2; exit 1; }
+          digest=$(docker buildx imagetools inspect "${SOURCE_IMAGE}:${tag}" --format '{{ .Manifest.Digest }}')
+          case "$digest" in
+            sha256:*) ;;
+            *) echo "failed to resolve upstream digest: '$digest'" >&2; exit 1 ;;
+          esac
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           echo "Resolved ${SOURCE_IMAGE}:${tag} -> ${digest}"
@@ -67,7 +70,7 @@ jobs:
       - name: Verify the mirror matches upstream
         run: |
           set -euo pipefail
-          mirrored=$(docker buildx imagetools inspect "${TARGET_IMAGE}:${{ steps.source.outputs.tag }}" --format '{{ .Name }}' | sed 's/.*@//')
+          mirrored=$(docker buildx imagetools inspect "${TARGET_IMAGE}:${{ steps.source.outputs.tag }}" --format '{{ .Manifest.Digest }}')
           echo "upstream: ${{ steps.source.outputs.digest }}"
           echo "mirror:   ${mirrored}"
           if [ "$mirrored" != "${{ steps.source.outputs.digest }}" ]; then
