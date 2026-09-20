@@ -22,7 +22,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   SOURCE_IMAGE: pgvector/pgvector
-  TARGET_IMAGE: ghcr.io/vm0-ai/pg17
+  TARGET_IMAGE: ghcr.io/${{ github.repository_owner }}/pg17
 
 jobs:
   mirror:
